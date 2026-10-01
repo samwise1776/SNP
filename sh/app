@@ -1,0 +1,74 @@
+#!/bin/bash
+
+NUM_DIR="../numbers"
+COUNT_FILE="$NUM_DIR/number.txt"
+NUMS_FILE="$NUM_DIR/nums.txt"
+
+mkdir -p "$NUM_DIR"
+
+# Create tracker if missing
+if [ ! -f "$COUNT_FILE" ]; then
+    echo "0" > "$COUNT_FILE"
+fi
+
+case "$1" in
+    -h|h|--h|-help|--help)
+        echo "SNP - Study of Numbers & Programming"
+        echo
+        echo "Commands:"
+        echo "  create   Create the next SNP number"
+        echo "  count    Show how many SNP numbers exist"
+        echo "  list     Show all SNP numbers"
+        ;;
+
+    create)
+        # Read current number
+        CURRENT=$(cat "$COUNT_FILE")
+
+        # Safety check
+        if ! [[ "$CURRENT" =~ ^[0-9]+$ ]]; then
+            CURRENT=0
+        fi
+
+        NEXT=$((CURRENT + 1))
+
+        # Every 1000 numbers creates a new tier
+        TIER=$(((NEXT - 1) / 1000))
+        INDEX=$((((NEXT - 1) % 1000) + 1))
+
+        NAME=$(printf "SNP-%d-%04d" "$TIER" "$INDEX")
+
+        # Work out previous SNP number
+        if [ "$NEXT" -eq 1 ]; then
+            PREVIOUS="G"
+        else
+            PREV_NUM=$((NEXT - 1))
+            PREV_TIER=$(((PREV_NUM - 1) / 1000))
+            PREV_INDEX=$((((PREV_NUM - 1) % 1000) + 1))
+
+            PREVIOUS=$(printf "SNP-%d-%04d" "$PREV_TIER" "$PREV_INDEX")
+        fi
+
+        # Add number
+        echo "$NAME = 3 ↑^($PREVIOUS) 3" >> "$NUMS_FILE"
+
+        # Update tracker
+        echo "$NEXT" > "$COUNT_FILE"
+
+        echo "Created: $NAME"
+        echo "Total SNP numbers: $NEXT"
+        ;;
+
+    count)
+        echo "SNP numbers: $(cat "$COUNT_FILE")"
+        ;;
+
+    list)
+        cat "$NUMS_FILE"
+        ;;
+
+    *)
+        echo "SNP"
+        echo "Run: $0 --help"
+        ;;
+esac

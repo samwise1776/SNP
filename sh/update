@@ -1,0 +1,46 @@
+#!/bin/bash
+
+set -e
+
+# sh/update -> SNP/
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+# ABSOLUTELY DO NOT TURN HOME OR / INTO A REPO
+if [ "$ROOT" = "$HOME" ] || [ "$ROOT" = "/" ]; then
+    echo "REFUSING: project root resolved to $ROOT"
+    exit 1
+fi
+
+NAME="$(basename "$ROOT")"
+
+echo "Project: $ROOT"
+echo "Repository: $NAME"
+
+if [ ! -d ".git" ]; then
+    echo "[+] Initializing Git in $ROOT"
+    git init
+    git branch -M main
+fi
+
+git add -A
+
+if ! git diff --cached --quiet; then
+    git commit -m "${*:-Update SNP}"
+else
+    echo "[=] Nothing to commit."
+fi
+
+if ! git remote get-url origin >/dev/null 2>&1; then
+    echo "[+] Creating GitHub repo: $NAME"
+
+    gh repo create "$NAME" \
+        --public \
+        --source=. \
+        --remote=origin
+fi
+
+git branch -M main
+git push -u origin main
+
+echo "✅ Updated $NAME"
